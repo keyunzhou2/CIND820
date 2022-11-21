@@ -7,6 +7,6 @@
    Dealing with missing values, outliers, imbalanced data, data transformation, column deletion, level deletion.
 5. The Data visualization file (Both R and HTML) contained various bargraphs and boxplots computed through R:
    Compared relationships between each factor and the outcome of COVID cases.
-6. Impute imbalanced data on training dataste and apply models
+6. The Initial file contain smote balanced data on training dataset and apply models
 
 The cleaned data is called df8
