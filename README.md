@@ -7,3 +7,6 @@
    Dealing with missing values, outliers, imbalanced data, data transformation, column deletion, level deletion.
 5. The Data visualization file contained various bargraphs and boxplots computed through R:
    Compared relationships between each factor and the outcome of COVID cases.
+
+
+The raw data is called df8
