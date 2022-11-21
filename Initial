@@ -1,0 +1,23 @@
+df8<-read.csv("df8.csv")
+df8$Outcome <- ifelse(df8$Outcome == "RESOLVED", 1,0)
+set.seed(123)
+train_index <- sample(1:nrow(df8), 0.7 * nrow(df8))
+train <- df8[train_index,]
+test <- df8[-train_index,]
+
+table(train$Outcome)
+
+#apply smote
+install.packages("devtools")
+devtools::install_github("dongyuanwu/RSBID")
+
+str(train)
+library(RSBID)
+newtrain <- SMOTE_NC(train, "Outcome", perc_maj = 100, k = 5)
+table(newtrain$Outcome)
+
+#GLM model
+glm_model <- glm(Outcome~.,newtrain, family = "binomial")
+summary(glm_model)
+
+predicted <- predict(glm_model, test, type="response")
