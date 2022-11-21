@@ -1,67 +1,60 @@
-#read csv
+#Read raw data
 df<-read.csv("toronto.csv", na.strings=c("","No Information","Pending","UNKNOWN","NOT LISTED, PLEASE SPECIFY","OTHER"))
+#See data structure
 head(df)
 summary(df)
-#na values
+
+#See missing values
 sum(is.na(df))
 
-#convert date variable
+#Format date column
 df$Episode.Date <- as.Date(df$Episode.Date, format = "%m/%d/%Y")
 df$Reported.Date <- as.Date(df$Reported.Date, format = "%m/%d/%Y")
+#Ensure format column correct
 class(df$Episode.Date)
 
-#convert categorical variable
+#Factorize column
 col <- c("Outbreak.Associated","Age.Group","Neighbourhood.Name","FSA","Source.of.Infection","Classification","Client.Gender", "Outcome","Currently.Hospitalized",
          "Currently.in.ICU","Currently.Intubated","Ever.Hospitalized","Ever.in.ICU","Ever.Intubated")
 df[col] <-lapply(df[col],factor)
 
-summary(df)
-head(df)
 
-#complete cases (omit na)
+#Include only complete cases and remove unwanted columns
 df1<-df[complete.cases(df), ]
 df1 <- df1[ -c(1:2) ]
 summary(df1)
 
-nrow(df)-nrow(df1)
-nrow(df)
-nrow(df1)
-
-#determine days to report to hospital + new column
+#Create "days to report" column (Days from symptom onset to report)
 df1$Onset.Report<-(df1$Reported.Date-df1$Episode.Date)
 head(df1)
-#save csv
+
+#Save temp data frame
 write.csv(df1,"C:/KZ/S/CIND820\\df1.csv", row.names = FALSE)
 
-head(df1)
 
-#took out "currently columns" not much value, too little observations
+#took out unwanted column
 df2<-df1[ -c(11:13) ]
-head(df2)
-summary(df2)
+#Save temp data
 write.csv(df2,"C:/KZ/S/CIND820\\df2.csv", row.names = FALSE)
 str(df2)
-
-as.integer(df2$Onset.Report)
-
-#take out negative days to reports
+#Format "day to report" column to numeric
+as.numeric(df2$Onset.Report)
+#Keep days that are only greater than 0, if less than 0,then keep as 0
 df3 <- df2
 df3$Onset.Report[df3$Onset.Report<0] <- 0
 
-
-#take out observations not confirmed covid
+#Take out levels that has undetermined results
 df4<-df3
 summary(df4)
 df4<-df4[!grepl('ACTIVE', df4$Outcome),]
 df4<-df4[!grepl('PROBABLE', df4$Classification),]
 str(df4)
 summary(df4)
-
-#can use to later as test, currently still in hospital, active cases
+#subset these undetermined results
 activecases<-df3[grep("ACTIVE", df3$Outcome), ]
 head(activecases)
 
-
+#Brief descriptive statistics
 mean(df4$Onset.Report)
 min(df4$Onset.Report)
 median(df4$Onset.Report)
@@ -69,39 +62,63 @@ sd(df4$Onset.Report)
 quantile(df4$Onset.Report)
 max(df4$Onset.Report)
 
-#columns interested to explore
+#Columns that we are interested in the final dataset
 col2keep <- c("Outbreak.Associated","Age.Group","Episode.Date","Source.of.Infection","Client.Gender","Neighbourhood.Name","Ever.Hospitalized","Ever.in.ICU","Ever.Intubated","Onset.Report","Outcome")
-
 df5<-df4[col2keep]
 head(df5)
 write.csv(df5,"C:/KZ/S/CIND820\\df5.csv", row.names = FALSE)
 
-#join demographic with 2016 census data
+#Join data from 201 Census data, and import census data
 join<-read.csv("join.csv")
 head(join)
 str(df5)
+#merge by neighbourhoos name to get income by neighborhood
 df6<-merge(df5,join, by = "Neighbourhood.Name")
+#remove "," within the incomes
 df6$Income<-as.numeric(gsub(",", "", df6$Income))
-df6$Onset.Report<-as.numeric(df6$Onset.Report)
 
-write.csv(df6,"C:/KZ/S/CIND820\\df6.csv", row.names = FALSE)
-
+#check the structure of data
 summary(df6)
 sd(df6$Income)
 str(df6)
 
-df6$Month <- format(df6$Episode.Date, "%m")
-head(df6)
-
-#subset fatal cases
+#check the statistical description of fatal cases
 fatal<-df6[grep("FATAL", df6$Outcome), ]
 head(fatal)
 summary(fatal$Age.Group)
 nrow(fatal)
 sd(fatal$Income)
-
-#subset resolved cases
+#check the statistical description of resolved cases
 resolved<-df6[grep("RESOLVED", df6$Outcome), ]
 summary(resolved)
 summary(resolved$Age.Group)
 sd(resolved$Onset.Report)
+
+#drop empty levels for outcome
+df6$Outcome<-droplevels(df6$Outcome)
+levels(df6$Outcome)
+
+#Create month column 
+df6$Month <- format(df6$Episode.Date, "%m")
+
+#save temp data
+write.csv(df6,"C:/KZ/S/CIND820\\df6.csv", row.names = FALSE)
+
+#drop date and neighborhood column
+df8 <- subset(df6, select = -c(Episode.Date,Neighbourhood.Name))
+names(df8)
+#relocate outcome column as last column
+library(dplyr)
+df8 <- df8 %>% relocate(Outcome, .after = Month)
+#check structure of final data set
+names(df8)
+str(df8)
+#format month column as numeric
+df8$Month<-as.factor(df8$Month)
+str(df8)
+#save data set
+write.csv(df8,"C:/KZ/S/CIND820\\df8.csv", row.names = FALSE)
+
+
+
+        
