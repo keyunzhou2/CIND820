@@ -9,4 +9,4 @@
    Compared relationships between each factor and the outcome of COVID cases.
 
 
-The raw data is called df8
+The cleaned data is called df8
