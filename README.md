@@ -5,7 +5,7 @@
    The file also contained descriptive statistics of each exposure variables of interest in the current project.
 4. The Rreprocessing file (Both R and HTML) included general data cleaning performed in R: 
    Dealing with missing values, outliers, imbalanced data, data transformation, column deletion, level deletion.
-5. The Data visualization file contained various bargraphs and boxplots computed through R:
+5. The Data visualization file (Both R and HTML) contained various bargraphs and boxplots computed through R:
    Compared relationships between each factor and the outcome of COVID cases.
 
 
