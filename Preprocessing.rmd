@@ -1,0 +1,201 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+#Read raw data
+df<-read.csv("toronto.csv", na.strings=c("","No Information","Pending","UNKNOWN","NOT LISTED, PLEASE SPECIFY","OTHER"))
+```
+
+```{r}
+#See data structure
+head(df)
+summary(df)
+```
+
+
+```{r}
+
+#See missing values
+sum(is.na(df))
+```
+
+```{r}
+#Format date column
+df$Episode.Date <- as.Date(df$Episode.Date, format = "%m/%d/%Y")
+df$Reported.Date <- as.Date(df$Reported.Date, format = "%m/%d/%Y")
+#Ensure format column correct
+class(df$Episode.Date)
+```
+
+
+```{r}
+#Factorize column
+col <- c("Outbreak.Associated","Age.Group","Neighbourhood.Name","FSA","Source.of.Infection","Classification","Client.Gender", "Outcome","Currently.Hospitalized",
+         "Currently.in.ICU","Currently.Intubated","Ever.Hospitalized","Ever.in.ICU","Ever.Intubated")
+
+df[col] <-lapply(df[col],factor)
+
+```
+
+
+```{r}
+
+#Include only complete cases and remove unwanted columns
+df1<-df[complete.cases(df), ]
+
+df1 <- df1[ -c(1:2,13:15) ]
+
+```
+
+
+```{r}
+#Create month data
+library(dplyr)
+df1$Month <- format(df1$Episode.Date, "%m")
+df1$Month<-as.numeric(gsub("0", "", df1$Month))
+df1$Month <- as.factor(df1$Month)
+df1<-df1 %>% dplyr::select(-c(Episode.Date,Reported.Date,Classification))
+
+```
+
+
+```{r}
+
+#Take out levels that has undetermined results
+df2<-df1
+df2<-df2[!grepl('ACTIVE', df2$Outcome),]
+df2$Outcome<-droplevels(df2$Outcome)
+
+
+```
+
+
+
+```{r}
+#Join data from 201 Census data, and import census data
+census<-read.csv("join.csv")
+head(census)
+census$Neighbourhood.Name<-as.factor(census$Neighbourhood.Name)
+
+#merge by neighborhood name to get income & density by neighborhood
+df3<- df2 %>% left_join(census, by= c("Neighbourhood.Name"="Neighbourhood.Name"))
+
+
+#remove "," within the incomes
+df3$Income<-as.numeric(gsub(",", "", df3$Income))
+df3$Density<-as.numeric(gsub(",", "", df3$Density))
+df3<-df3 %>% dplyr::select(-c(FSA,Neighbourhood.Name))
+sum(is.na(df3$Income))
+```
+
+```{r}
+#check the statistical description of fatal cases
+nrow(df3)
+fatal<-df3[grep("FATAL", df3$Outcome), ]
+nrow(fatal)
+#check the statistical description of resolved cases
+resolved<-df3[grep("RESOLVED", df3$Outcome), ]
+nrow(resolved)
+```
+
+
+
+
+```{r}
+
+#relocate outcome column as last column
+df3 <- df3 %>% relocate(Outcome, .after = Density)
+#check structure of final data set
+str(df3)
+
+```
+```{r}
+#save temp data
+write.csv(df3,"C:/KZ/S/CIND820\\df3.csv", row.names = FALSE)
+```
+
+VISUALIZE DATA
+```{r}
+#bar plot for age vs outcome
+fatal$Outcome<-droplevels(fatal$Outcome)
+age <- table(fatal$Outcome,fatal$Age.Group)
+
+barplot(age, main="Age and Fatal COVID Cases",
+        xlab="Age Group", col=c("lightblue"))
+```
+
+```{r}
+#bar plot for outbreak vs outcome
+out <- table(fatal$Outcome,fatal$Outbreak.Associated)
+barplot(out, main="Outbreak Type and Fatal COVID Cases",
+        xlab="Outbreak Type", ylab="Frequency", col=c("lightblue"))
+```
+
+```{r}
+#bar plot for source vs outcome
+sou <- table(fatal$Outcome,fatal$Source.of.Infection)
+barplot(sou, main="Source of Infection and Fatal COVID Cases",
+        xlab="Source of Infection", col=c("lightblue"))
+
+```
+
+```{r}
+#bar plot for gender vs outcome
+gen <- table(fatal$Outcome,fatal$Client.Gender)
+barplot(gen, main="Gender and Fatal COVID Cases",
+        xlab="Gender", col=c("lightblue"))
+```
+
+```{r}
+#bar plot for hospitalization vs outcome
+hou <- table(fatal$Outcome,fatal$Ever.Hospitalized)
+barplot(hou, main="Hospitalization Status and Fatal COVID Cases",
+        xlab="Hospitalization Status", col=c("lightblue"))
+```
+
+```{r}
+#bar plot for ICU vs outcome
+icu <- table(fatal$Outcome,fatal$Ever.in.ICU)
+barplot(icu, main="ICU Status and Fatal COVID Cases",
+        xlab="ICU Status", col=c("lightblue"))
+```
+
+```{r}
+#bar plot for Intubation vs outcome
+int <- table(fatal$Outcome,fatal$Ever.Intubated)
+barplot(int, main="Intubation Status and Fatal COVID Cases",
+        xlab="Intubation Status", col=c("lightblue"))
+```
+
+```{r}
+#Bar plot for Month
+mon <- table(fatal$Outcome,fatal$Month)
+barplot(mon, main="Month and Fatal COVID Cases",
+        xlab="Months", col=c("lightblue","pink"),
+        legend = rownames(mon), beside=FALSE)
+```
+
+```{r}
+#boxplot for income
+boxplot(df3$Income,main="boxplot of Income")
+#log transform 
+loginc <- log(as.data.frame(df3$Income))
+boxplot(loginc, main="Log-transformed boxplot of Income")
+boxplot(log(Income)~Outcome,df3)
+```
+
+```{r}
+
+```
+
+```{r}
+#boxplot for Density
+boxplot(df3$Density,main="boxplot of Population Density")
+#log transform
+boxplot(log(df3$Density), main="log-transformed population density")
+boxplot(log(Density)~Outcome,df3)
+```
+        
