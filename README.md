@@ -7,4 +7,4 @@
    Dealing with missing values, outliers, imbalanced data, data transformation, column deletion, level deletion, bar plots, boxplots
 5. The Imbalanced ML files (Both rmd and html) contained modeling with Logistic regression, Decision tree, XGBoost with imbalanced target data
 6. The SMOTE balanced ML file contained modeling with Logistic regression, Decision tree, XGBoost with SMOTE balanced target data
-
+7. The Final Report contained final findings of the current project
